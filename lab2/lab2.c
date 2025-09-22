@@ -1,0 +1,35 @@
+#define _POSIX_C_SOURCE 200809L
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+int main() {
+  char *lineptr = NULL;
+  size_t n = 0;
+  ssize_t read;
+
+  while (1) {
+
+    printf("Enter programs to run.\n");
+    printf("> ");
+    read = getline(&lineptr, &n, stdin);
+    if (lineptr[read - 1] == '\n') {
+      lineptr[read - 1] = '\0';
+    }
+
+    pid_t pid = fork();
+
+    if (pid == 0) {
+      if (execl(lineptr, lineptr, (char *)NULL) == -1) {
+        perror("Exec failure");
+        return 1;
+      }
+    } else {
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }
+  free(lineptr);
+  return 0;
+}
