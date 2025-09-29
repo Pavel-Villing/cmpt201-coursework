@@ -1,0 +1,64 @@
+#define _POSIX_C_SOURCE 200809
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {
+  char *history[5] = {NULL};
+  int index = 0;
+  int count = 0;
+  char *line = NULL;
+  size_t len = 0;
+
+  while (1) {
+    printf("Enter input: ");
+    ssize_t read = getline(&line, &len, stdin);
+
+    if (read > 0 && line[read - 1] == '\n') {
+      line[read - 1] = '\0';
+    }
+
+    if (strcmp(line, "print") == 0) {
+      int start;
+      if (count < 5) {
+        start = 0;
+      } else {
+        start = index;
+      }
+      int n;
+      if (count < 5) {
+        n = count;
+      } else {
+        n = 5;
+      }
+      for (int i = 0; i < n; i++) {
+        int pos = (start + i) % 5;
+
+        if (history[pos]) {
+          printf("%s\n", history[pos]);
+        }
+      }
+      printf("print\n");
+    } else if (history[index]) {
+      free(history[index]);
+    }
+
+    history[index] = malloc(strlen(line) + 1);
+
+    if (history[index]) {
+      strcpy(history[index], line);
+    }
+
+    index = (index + 1) % 5;
+
+    if (count < 5)
+      count++;
+  }
+
+  for (int i = 0; i < 5; i++) {
+    free(history[i]);
+  }
+  free(line);
+
+  return 0;
+}
