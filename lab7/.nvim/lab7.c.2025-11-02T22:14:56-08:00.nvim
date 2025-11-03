@@ -1,0 +1,132 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_ITEMS 1000
+
+typedef struct
+{
+    int line_number;
+    int value;
+} Input;
+
+typedef struct
+{
+    int line_number;
+    int value;
+} IntermediateInput;
+
+typedef struct
+{
+    int value;
+    int* lines;
+    int count;
+    int cap;
+} Output;
+
+void map(Input* inThing, IntermediateInput* midThing)
+{
+    midThing->line_number = inThing->line_number;
+    midThing->value = inThing->value * 2;
+}
+
+void reduce(Output outThing)
+{
+    printf("(%d, [", outThing.value);
+    for (int i = 0; i < outThing.count; i++)
+    {
+        printf("%d", outThing.lines[i]);
+        if (i != outThing.count - 1)
+        {
+            printf(", ");
+        }
+    }
+    printf("])\n");
+}
+
+int main(void)
+{
+    Input* rawList = (Input*)malloc(sizeof(Input) * MAX_ITEMS);
+    IntermediateInput* midList = (IntermediateInput*)malloc(sizeof(IntermediateInput) * MAX_ITEMS);
+    Output* groups = (Output*)malloc(sizeof(Output) * MAX_ITEMS);
+    int rawCount = 0;
+    int groupCount = 0;
+    char buff[128];
+
+    if (!rawList || !midList || !groups)
+    {
+        return 1;
+    }
+
+    printf("Enter values (one per line). Type 'end' to finish:\n");
+
+    while (fgets(buff, sizeof(buff), stdin))
+    {
+        if (strncmp(buff, "end", 3) == 0)
+        {
+            break;
+        }
+        if (rawCount >= MAX_ITEMS)
+        {
+            break;
+        }
+        rawList[rawCount].line_number = rawCount + 1;
+        rawList[rawCount].value = (int)strtol(buff, NULL, 10);
+        rawCount++;
+    }
+
+    for (int i = 0; i < rawCount; i++)
+    {
+        map(&rawList[i], &midList[i]);
+    }
+
+    for (int i = 0; i < rawCount; i++)
+    {
+        int v = midList[i].value;
+        int ln = midList[i].line_number;
+        int found = -1;
+
+        for (int j = 0; j < groupCount; j++)
+        {
+            if (groups[j].value == v)
+            {
+                found = j;
+                break;
+            }
+        }
+
+        if (found == -1)
+        {
+            groups[groupCount].value = v;
+            groups[groupCount].count = 0;
+            groups[groupCount].cap = 4;
+            groups[groupCount].lines = (int*)malloc(sizeof(int) * groups[groupCount].cap);
+            groups[groupCount].lines[groups[groupCount].count++] = ln;
+            groupCount++;
+        }
+        else
+        {
+            if (groups[found].count == groups[found].cap)
+            {
+                groups[found].cap *= 2;
+                groups[found].lines = (int*)realloc(groups[found].lines, sizeof(int) * groups[found].cap);
+            }
+            groups[found].lines[groups[found].count++] = ln;
+        }
+    }
+
+    for (int i = 0; i < groupCount; i++)
+    {
+        reduce(groups[i]);
+    }
+
+    for (int i = 0; i < groupCount; i++)
+    {
+        free(groups[i].lines);
+    }
+    free(groups);
+    free(midList);
+    free(rawList);
+
+    return 0;
+}
